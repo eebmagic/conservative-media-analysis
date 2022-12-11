@@ -9,6 +9,8 @@
     - *NOTE:* This might be the point where a local database could make sense. Depending on how much text this comes out to.
         - Most texts might be small as a result of YouTube shorts.
 
+Use this website to find YouTube channel ids if a channel has a username instead of a id in the url:
+- https://commentpicker.com/youtube-channel-id.php
 
 ## Data Processing
 - Maybe split videos by year and build word-embeddings for each year.
