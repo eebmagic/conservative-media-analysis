@@ -1,8 +1,22 @@
 import json
 import os
 from tqdm import tqdm
+import nltk
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
 
-def getTextsInDateRange(channels, start, stop):
+STOPS = set(stopwords.words('english'))
+nltk.download('wordnet')
+lemmatizer = WordNetLemmatizer()
+
+def cleanTexts(texts):
+    def cleanText(text):
+        words = text.strip().split(' ')
+        return [lemmatizer.lemmatize(w.lower()).lower() for w in words if (w not in STOPS and '[' not in w)]
+
+    return [cleanText(text) for text in texts]
+
+def getTextsInDateRange(channels, start, stop, cleaned=True):
     texts = []
     for channel in channels:
         # Load videos
@@ -27,17 +41,19 @@ def getTextsInDateRange(channels, start, stop):
                 if year >= start and year <= stop:
                     texts.append(captions[vidId])
 
-        # for vidId in dates:
-        #     date = dates[vidId]
-        #     year = int(date.split(' ')[-1])
-        #     if start <= year <= stop:
-        #         texts.append(captions[vidId])
-    return texts
+    if cleaned:
+        return cleanTexts(texts)
+    else:
+        return texts
 
 def getPairs(texts, window=2):
+    '''
+    texts: list of list of strings.
+        Each list should be a viddeo caption, each string should be a word in a caption.
+    window: the distance distance between words to consider a pair (min is 2).
+    '''
     pairs = []
-    for text in tqdm(texts):
-        words = text.split(' ')
+    for words in tqdm(texts):
         for i in range(len(words)):
             for j in range(1, window+1):
                 if i+j < len(words):
@@ -46,15 +62,18 @@ def getPairs(texts, window=2):
                     pairs.append((words[i], words[i-j]))
     return pairs
 
-def getFullWordset():
-    files = os.listdir('video-captions')
+def getFullWordset(texts):
     words = set()
-    for file in files:
-        if file.endswith('.json'):
-            with open(f'video-captions/{file}') as file:
-                data = json.load(file)
-                for vidId in data:
-                    words.update(data[vidId].split(' '))
+    # files = os.listdir('video-captions')
+    # for file in files:
+    #     if file.endswith('.json'):
+    #         with open(f'video-captions/{file}') as file:
+    #             data = json.load(file)
+    #             for vidId in data:
+    #                 words.update(data[vidId].split(' '))
+    for text in texts:
+        words.update(text)
+            
     return words
 
 def buildTokenizer(wordset):
